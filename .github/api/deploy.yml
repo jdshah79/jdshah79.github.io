@@ -12,8 +12,15 @@ jobs:
 
       - name: Inject token into HTML
         run: |
-          sed -i 's/YOUR_TOKEN_HERE/${{ secrets.HF_TOKEN }}/g' index.html
-
+          python3 -c "
+    token = '${{ secrets.HF_TOKEN }}'
+    with open('index.html', 'r') as f:
+        content = f.read()
+    content = content.replace('YOUR_TOKEN_HERE', token)
+    with open('index.html', 'w') as f:
+        f.write(content)
+    print('Token injected:', 'YOUR_TOKEN_HERE' not in content)
+    "
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:

@@ -12,27 +12,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Inject HF_TOKEN into index.html
+       - name: Inject HF_TOKEN into index.html
         env:
           HF_SECRET: ${{ secrets.HF_TOKEN }}
         run: |
-          # Use an environment variable to prevent shell expansion issues
-          python3 -c "
-import os
-token = os.environ['HF_SECRET']
-with open('index.html', 'r') as f:
-    content = f.read()
-
-# Replace the placeholder text in your file
-updated_content = content.replace('YOUR_TOKEN_HERE', token)
-
-with open('index.html', 'w') as f:
-    f.write(updated_content)
-
-print('Injection process complete.')
-"
-      - name: Deploy to GitHub Pages
+          python3 -c "import os; f=open('index.html','r'); c=f.read(); f.close(); u=c.replace('YOUR_TOKEN_HERE', os.environ['HF_SECRET']); f=open('index.html','w'); f.write(u); f.close(); print('Process complete.')"
+            - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

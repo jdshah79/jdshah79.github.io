@@ -3,7 +3,7 @@ name: Deploy with HF Token
 on:
   push:
     branches: [main]
-workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -12,13 +12,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-       - name: Inject HF_TOKEN into index.html
+
+      - name: Inject HF_TOKEN into index.html
         env:
           HF_SECRET: ${{ secrets.HF_TOKEN }}
         run: |
           python3 -c "import os; f=open('index.html','r'); c=f.read(); f.close(); u=c.replace('YOUR_TOKEN_HERE', os.environ['HF_SECRET']); f=open('index.html','w'); f.write(u); f.close(); print('Process complete.')"
-       - name: Deploy to GitHub Pages
-         uses: peaceiris/actions-gh-pages@v3
-         with:
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .

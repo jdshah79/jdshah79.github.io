@@ -663,18 +663,46 @@ Rules:
         thinkingMessage.innerHTML = "I am ready to connect, but Janak needs to update my configuration token. You can ask me about his <strong>AI Projects</strong> or <strong>Governance</strong> tools in the meantime!";
         return;
       }
-
       const response = await fetch("https://api-inference.huggingface.co/models/" + MODEL, {
+        method: "POST",
         headers: { 
-          "Authorization": `Bearer ${HF_TOKEN}`,
+          "Authorization": "Bearer " + HF_TOKEN.trim(),
           "Content-Type": "application/json"
         },
-        method: "POST",
-        body: JSON.stringify({ inputs: SYSTEM_PROMPT + "\n\nUser: " + text }),
-      });
-      
+        body: JSON.stringify({ 
+          inputs: SYSTEM_PROMPT + "\n\nUser: " + text,
+          parameters: {
+            max_new_tokens: 250,
+            return_full_text: false
+          }
+      }),      
       const result = await response.json();
+
+      // Handle Hugging Face Cold Start States cleanly
+      if (response.status === 503 || result.error?.includes("loading")) {
+        const estimatedTime = result.estimated_time ? Math.round(result.estimated_time) : 20;
+        thinkingMessage.innerHTML = `🤖 Waking up my cloud server... Please wait roughly ${estimatedTime} seconds while I initialize my model!`;
+        return;
+      }
       
+      if (result && result[0]?.generated_text) {
+        let botResponse = result[0].generated_text;
+        
+        // Clean up prompt leaks if the model repeats the prompt layout
+        if (botResponse.includes("User:")) {
+          botResponse = botResponse.split("User:").pop().trim();
+        } else {
+          botResponse = botResponse.replace(SYSTEM_PROMPT, "").trim();
+        }
+        thinkingMessage.innerHTML = botResponse;
+      } else {
+        thinkingMessage.innerHTML = "I successfully connected, but received an empty response. Try typing your question again.";
+      }
+
+    } catch (error) {
+      console.error("CORS / Network Trace Error:", error);
+      thinkingMessage.innerHTML = "Access check blocked dynamic routing. Try selecting one of my predefined focus pill buttons above!";
+    }
       if (result && result[0]?.generated_text) {
         let botResponse = result[0].generated_text;
         

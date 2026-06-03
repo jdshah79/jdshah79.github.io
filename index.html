@@ -639,7 +639,7 @@ Rules:
       
       try {
         // Emergency check in case token snippet wasn't replaced properly
-        if (!HF_TOKEN || HF_TOKEN === "YOUR_TOKEN_HERE" || HF_TOKEN.includes("YOUR_")) {
+        if (!HF_TOKEN || HF_TOKEN.includes("YOUR_")) {
           thinkingMessage.innerHTML = "I am ready to connect, but Janak needs to update my configuration token. You can ask me about his <strong>AI Projects</strong> or <strong>Governance</strong> tools in the meantime!";
           return;
         }

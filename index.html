@@ -672,9 +672,14 @@ Rules:
           return;
         }
         
-        if (result && result[0]?.generated_text) {
-          let botResponse = result[0].generated_text;
-          
+        if (result.choices?.[0]?.message?.content) {
+          let botResponse = result.choices[0].message.content;
+          thinkingMessage.innerHTML = botResponse;
+           } 
+        else {
+          console.log("Full result:", JSON.stringify(result)); // temporary debug line
+          thinkingMessage.innerHTML = "I successfully connected, but received an empty response. Try typing your question again.";
+          }
           // Clean up prompt leaks if the model repeats the prompt layout
           if (botResponse.includes("User:")) {
             botResponse = botResponse.split("User:").pop().trim();

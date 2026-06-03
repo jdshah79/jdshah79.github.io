@@ -644,23 +644,27 @@ Rules:
           return;
         }
 
-        const response = await fetch("https://router.huggingface.co/v1/chat/completions/" + MODEL, {
+        const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
           method: "POST",
-          headers: { 
+          headers: {
             "Authorization": "Bearer " + HF_TOKEN.trim(),
             "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ 
-            inputs: SYSTEM_PROMPT + "\n\nUser: " + text,
-            parameters: {
-              max_new_tokens: 250,
-              return_full_text: false
-            }
-          })
-        });
-        
+            },
+            body: JSON.stringify({
+              model: MODEL,
+              messages: [
+                { role: "system", content: SYSTEM_PROMPT },
+                { role: "user",   content: text }
+                ],
+                max_tokens: 400,
+                temperature: 0.7
+                })
+         });
         const result = await response.json();
-
+        if (result.choices?.[0]?.message?.content) {
+          let botResponse = result.choices[0].message.content;
+          thinkingMessage.innerHTML = botResponse;
+          }
         // Handle Hugging Face Cold Start States cleanly
         if (response.status === 503 || result.error?.includes("loading")) {
           const estimatedTime = result.estimated_time ? Math.round(result.estimated_time) : 20;

@@ -644,7 +644,7 @@ Rules:
           return;
         }
 
-        const response = await fetch("https://api-inference.huggingface.co/models/" + MODEL, {
+        const response = await fetch("https://router.huggingface.co/v1/chat/completions/" + MODEL, {
           method: "POST",
           headers: { 
             "Authorization": "Bearer " + HF_TOKEN.trim(),

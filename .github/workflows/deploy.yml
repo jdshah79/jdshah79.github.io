@@ -29,8 +29,8 @@ jobs:
         env:
           HF_SECRET: ${{ secrets.HF_TOKEN }}
         run: |
-          python3 -c "import os; f=open('index.html','r'); c=f.read(); f.close(); u=c.replace('YOUR_TOKEN_HERE', os.environ['HF_SECRET']); f=open('index.html','w'); f.write(u); f.close(); print('Process complete.')"
-
+          python3 -c "import os; f=open('index.html','r'); c=f.read(); f.close(); u=c.replace('YOUR_TOKEN_HERE', os.environ['HF_SECRET']); f=open('index.html','w'); f.write(u); f.close(); print('Token injected successfully.')"
+          
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

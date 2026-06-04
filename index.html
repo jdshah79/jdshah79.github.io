@@ -670,11 +670,7 @@ Rules:
           const estimatedTime = result.estimated_time ? Math.round(result.estimated_time) : 20;
           thinkingMessage.innerHTML = `🤖 Waking up my cloud server... Please wait roughly ${estimatedTime} seconds while I initialize my model!`;
           return;
-        }
-        
-        if (result && result[0]?.generated_text) {
-          let botResponse = result[0].generated_text;
-          
+        } 
           // Clean up prompt leaks if the model repeats the prompt layout
           if (botResponse.includes("User:")) {
             botResponse = botResponse.split("User:").pop().trim();

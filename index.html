@@ -602,92 +602,89 @@ Rules:
       return div;
     }
 
-    // Hybrid Message Handler: Local First -> AI Fallback
-    async function sendMessage() {
-      const input = document.getElementById("janak-chat-input");
-      const text = input.value.trim();
-      if (!text) return;
-      
-      // 1. Show user message
-      addMessage(text, "user");
-      input.value = "";
-      
-      // 2. Check for local matches
-      const lowerText = text.toLowerCase();
-      let matchedResponse = null;
+  // Hybrid Message Handler: Local First -> AI Fallback
+  async function sendMessage() {
+   const input = document.getElementById("janak-chat-input");
+   const text = input.value.trim();
+   if (!text) return;
 
-      if (lowerText.includes("ai project")) {
-        matchedResponse = LOCAL_RESPONSES["ai projects"];
-      } else if (lowerText.includes("governance") || lowerText.includes("hsbc")) {
-        matchedResponse = LOCAL_RESPONSES["governance"];
-      } else if (lowerText.includes("leadership") || lowerText.includes("management") || lowerText.includes("delivery")) {
-        matchedResponse = LOCAL_RESPONSES["delivery leadership"];
-      } else if (lowerText.includes("cv") || lowerText.includes("resume")) {
-        matchedResponse = LOCAL_RESPONSES["cv"];
-      }
+   addMessage(text, "user");
+   input.value = "";
 
-      // 3. If local match is found, serve it instantly and exit
-      if (matchedResponse) {
-        setTimeout(() => {
-          addMessage(matchedResponse, "bot");
-        }, 300);
-        return; 
-      }
+   const lowerText = text.toLowerCase();
+   let matchedResponse = null;
 
-      // 4. Fallback to API Model if no local keywords matched
-      const thinkingMessage = addMessage("Thinking...", "bot");
-      
-      try {
-        // Emergency check in case token snippet wasn't replaced properly
-        if (!HF_TOKEN || HF_TOKEN.includes("YOUR_")) {
-          thinkingMessage.innerHTML = "I am ready to connect, but Janak needs to update my configuration token. You can ask me about his <strong>AI Projects</strong> or <strong>Governance</strong> tools in the meantime!";
-          return;
-        }
+   if (lowerText.includes("ai project")) {
+    matchedResponse = LOCAL_RESPONSES["ai projects"];
+   } else if (lowerText.includes("governance") || lowerText.includes("hsbc")) {
+    matchedResponse = LOCAL_RESPONSES["governance"];
+   } else if (lowerText.includes("leadership") || lowerText.includes("management") || lowerText.includes("delivery")) {
+     matchedResponse = LOCAL_RESPONSES["delivery leadership"];
+   } else if (lowerText.includes("cv") || lowerText.includes("resume")) {
+    matchedResponse = LOCAL_RESPONSES["cv"];
+   }
 
-        const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": "Bearer " + HF_TOKEN.trim(),
-            "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model: MODEL,
-              messages: [
-                { role: "system", content: SYSTEM_PROMPT },
-                { role: "user",   content: text }
-                ],
-                max_tokens: 400,
-                temperature: 0.7
-                })
-         });
-        const result = await response.json();
-        if (result.choices?.[0]?.message?.content) {
-          let botResponse = result.choices[0].message.content;
-          thinkingMessage.innerHTML = botResponse;
-          }
-        // Handle Hugging Face Cold Start States cleanly
-        if (response.status === 503 || result.error?.includes("loading")) {
-          const estimatedTime = result.estimated_time ? Math.round(result.estimated_time) : 20;
-          thinkingMessage.innerHTML = `🤖 Waking up my cloud server... Please wait roughly ${estimatedTime} seconds while I initialize my model!`;
-          return;
-        } 
-          // Clean up prompt leaks if the model repeats the prompt layout
-          if (botResponse.includes("User:")) {
-            botResponse = botResponse.split("User:").pop().trim();
-          } else {
-            botResponse = botResponse.replace(SYSTEM_PROMPT, "").trim();
-          }
-          thinkingMessage.innerHTML = botResponse;
+   if (matchedResponse) {
+     setTimeout(() => addMessage(matchedResponse, "bot"), 300);
+     return;
+   }
+
+   const thinkingMessage = addMessage("Thinking...", "bot");
+
+   try {
+     if (!HF_TOKEN || HF_TOKEN.includes("YOUR_")) {
+       thinkingMessage.innerHTML = "I am ready to connect, but Janak needs to update my configuration token. You can ask me about his <strong>AI Projects</strong> or <strong>Governance</strong> tools in the meantime!";
+       return;
+     }
+
+     const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + HF_TOKEN.trim(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: text }
+        ],
+        max_tokens: 400,
+        temperature: 0.7
+       })
+     });
+
+     // ✅ Check for cold-start BEFORE parsing
+     if (response.status === 503) {
+       const result = await response.json();
+       const estimatedTime = result.estimated_time ? Math.round(result.estimated_time) : 20;
+       thinkingMessage.innerHTML = `🤖 Waking up my cloud server... Please wait roughly ${estimatedTime} seconds while I initialize my model!`;
+      return;
+     }
+
+      const result = await response.json();
+
+      // ✅ botResponse is now declared in scope before use
+      if (result.choices?.[0]?.message?.content) {
+      let botResponse = result.choices[0].message.content;
+
+      // Clean up prompt leaks
+      if (botResponse.includes("User:")) {
+        botResponse = botResponse.split("User:").pop().trim();
         } else {
-          thinkingMessage.innerHTML = "I successfully connected, but received an empty response. Try typing your question again.";
+             botResponse = botResponse.replace(SYSTEM_PROMPT, "").trim();
         }
 
-      } catch (error) {
-        console.error("CORS / Network Trace Error:", error);
-        thinkingMessage.innerHTML = "I encountered a connection error. Try choosing one of my quick-topic options above!";
+        thinkingMessage.innerHTML = botResponse;
+      } else {
+       thinkingMessage.innerHTML = "I successfully connected, but received an empty response. Try typing your question again.";
       }
-    }
 
+     } catch (error) {
+    console.error("CORS / Network Trace Error:", error);
+    thinkingMessage.innerHTML = "I encountered a connection error. Try choosing one of my quick-topic options above!";
+     }
+    }
     // Handles quick-pill button actions cleanly
     function sendPreset(topic) {
       document.getElementById("janak-chat-input").value = topic;
